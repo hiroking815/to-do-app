@@ -10,66 +10,182 @@
   use Cake\Datasource\ConnectionManager;
   use Cake\I18n\Time;
 
-
+  /**
+   * class
+   * TodoController
+   */
   class TodoController extends AppController{
 
+    /**
+     * function
+     * initialize
+     */
     public function initialize(){
+
       parent::initialize();
       $this->Status = TableRegistry::get('status');
       $this->Users = TableRegistry::get('users');
       $this->Tasks = TableRegistry::get('tasks');
-    }
 
+    } //end initialize()
+
+    /**
+     * function
+     * beforeFilter
+     */
     public function beforeFilter(Event $event){
+
       $statusAll = $statusVaild = array();
+
       foreach ($this->Status->find()->all() as $tmpSts){
+
         $statusAll += array ($tmpSts->status_id => $tmpSts->status_name);
+
         if($tmpSts->DEL_FLG != '1'){
+
           $statusVaild += array ($tmpSts->status_id => $tmpSts->status_name);
-        }
-      }
+
+        } // end if
+
+      } //end foreach
+
       $this->set(compact('statusAll', 'statusVaild'));
 
       $usersAll = $usersVaild = array();
+
       foreach ($this->Users->find()->all() as $tmpUser){
+
         $usersAll += array ($tmpUser->user_id => $tmpUser->user_name);
+
         if($tmpUser->DEL_FLG !='1'){
+
           $usersVaild += array ($tmpUser->user_id => $tmpUser->user_name);
-        }
-      }
+
+        } //end if
+
+      } //end foreach
+
       $this->set(compact('usersAll', 'usersVaild'));
 
-    }
+    } // end beforeFilter()
 
+
+    /**
+     * トップ画面
+     * function
+     * index
+     */
     public function index() {
-      $tasks = $this->Tasks->find()->where(['del_flg' => '0']);
+
+      $tasks = [];
+
+      $tasks = $this->Tasks->find()
+      ->where(['del_flg' => '0']);
+
       $this->set(compact('tasks'));
 
+    } //end index()
 
-    }
-
+    /**
+     * 検索結果表示画面
+     * function
+     * search
+     */
     public function search(){
-      if($this->request->is('post')){
-        $tasks = $this->Tasks-find()->where(['task_name like' => '%'.$task_name.'%']);
+
+      if($this->request->is('get')){
+
+        $f_task_name = $this->request->getQuery('f_task_name');
+        $tmp_deadline_frm = $this->request->getQuery('f_deadline_frm');
+        $tmp_deadline_to = $this->request->getQuery('f_deadline_to');
+        $f_personnel = $this->request->getQuery('f_personnel');
+        $f_status = $this->request->getQuery('f_status');
+
+        $f_deadline_frm = "'".$tmp_deadline_frm['year'].'-'.$tmp_deadline_frm['month'].'-'.$tmp_deadline_frm['day']."'";
+        $f_deadline_to = "'".$tmp_deadline_to['year'].'-'.$tmp_deadline_to['month'].'-'.$tmp_deadline_to['day']."'";
+
+        $tasks = $this->Tasks->find('all')
+        ->where(['del_flg' => '0']);
+
+        if($f_task_name != ''){
+          $tasks = $tasks->where(['task_name LIKE' => '%'.$f_task_name.'%']);
+        } //end if
+
+        if($tmp_deadline_frm['year'] != '' && $tmp_deadline_to['year'] == ''){
+
+          $tasks = $tasks->where('deadline >= '.$f_deadline_frm);
+
+        } elseif ($tmp_deadline_frm['year'] == '' && $tmp_deadline_to['year'] != '') {
+
+          $tasks = $tasks->where('deadline <= '.$f_deadline_to);
+
+        } //end if
+
+        if($tmp_deadline_frm['year'] != '' && $tmp_deadline_to['year'] != ''){
+
+          $tasks = $tasks->where('deadline BETWEEN '.$f_deadline_frm.' AND '.$f_deadline_to);
+
+        } //end if
+
+        if($f_personnel != ''){
+
+          $tasks = $tasks->where(['fk_user_id' => $f_personnel]);
+
+        } //end if
+
+        if($f_personnel != ''){
+
+          $tasks = $tasks->where(['fk_status_id' => $f_status]);
+
+        } //end if
+
+
         $this->set(compact('tasks'));
 
-        return redirect('/todo/index');
-      }
-    }
+      } //end if
 
+    } //end search()
 
+    /**
+     * 詳細表示画面
+     * function
+     * view
+     */
     public function view($task_id = null){
 
-      $task = $this->Tasks->find()->where(['task_id' => $task_id, 'del_flg' => '0'])->firstOrFail();
+      $task = $this->Tasks->find()->where(['Tasks.task_id' => $task_id, 'del_flg' => '0'])->firstOrFail();
+
       $this->set(compact('task'));
-    }
+
+    } //end view()
 
 
-    function newTask($task_id = null) {
+    function newTask() {
 
-    }
+    } //end newTask()
 
-    function confirm() {
+    /**
+     * 編集画面
+     * function
+     * edit
+     */
+    public function edit($task_id = null){
+
+      $task = $this->Tasks->get($task_id);
+
+      $this->set(compact('task'));
+
+      var_dump($task);
+
+    } //end edit()
+
+    /**
+     * 新規・編集確認画面
+     * function
+     * confirm
+     */
+    function confirm($task_id = null) {
+
       $task_name = $this->request->data['task_name'];
       $task_detail = $this->request->data['task_detail'];
       $deadline = $this->request->data['deadline'];
@@ -84,41 +200,65 @@
         'personnel' => $personnel
       ));
 
-      var_dump($deadline);
-    }
-
-    function complete(){
+    } //end confirm()
 
 
-      if($this->request->is('post')){
+    /**
+     * 新規・編集完了 -> index
+     * function
+     * complete
+     */
+    function complete($task_id = null){
+
+      $task_id = $this->request->data['task_id'];
+      $this->set(['task_id' => $task_id]);
+
+      if(is_null($task_id)){
+
         $task = $this->Tasks->newEntity($this->request->data);
+        $msg = '登録';
+
+
+      } else {
+
+        $task = $this->Tasks->get($task_id);
+        $msg = '更新';
+
+      } //end if
+
+      if($this->request->is('post', 'get')){
 
         $task = $this->Tasks->patchEntity($task, $this->request->data);
+
         if($this->Tasks->save($task, false)){
-          $this->Flash->success('ok!');
+
+          $this->Flash->success($msg);
+
           return $this->redirect('/todo/index');
+
         } else {
+
           $this->log(print_r($task->errors(),true),LOG_DEBUG);
+
           $this->Flash->error('データの登録に失敗しました');
-        }
 
-      }
+          return $this->redirect('/todo/index');
 
-      $this->set('tasks',$this->Tasks->newEntity());
+        } //end if
 
-    }
-
-    public function edit($task_id = null){
-
-
-      $task = $this->Tasks->get($task_id);
+      } //end if
 
       $this->set(compact('task'));
 
-      var_dump($task);
 
-    }
+    } //end complete()
 
+
+    /**
+     * 削除
+     * function
+     * delete
+     */
     function delete($task_id = null){
 
       if($this->request->is('get')){
@@ -128,19 +268,23 @@
         $task->del_flg = '1';
 
         if($this->Tasks->save($task)){
+
           $this->Flash->success('「'.$task->task_name.'」を削除しました');
 
           return $this->redirect('/todo/index');
+
         } else {
+
           $this->log(print_r($task->errors(),true),LOG_DEBUG);
+
           $this->Flash->error('データの更新に失敗しました');
-        }
 
+        } //end if 
 
+      } //end if
 
-      }
+    } //end delete()
 
-    }
-  }
+  }//end TodoController
 
 ?>

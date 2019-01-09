@@ -6,26 +6,28 @@
 <body>
   <?php
 
+
     echo $this->Form->create(
       'null',
       [
         'type' => 'post',
         'url' => [
           'controller' => 'todo',
-          'action' => 'confirm'
-        ]
+          'action' => 'complete'        ]
       ]
     );
+
+    echo $this->Form->hidden('task_id', ['value' => $task->task_id]);
 
     echo $this->Form->input(
       'task_name',
       [
         'type' => 'text',
         'size' => 40,
-        'label' => 'タスク名'
-      ], [
-        'default' => ['task' => $task->task_name]
+        'label' => 'タスク名',
+        'default' => $task->task_name
       ]
+
 
     );
 
@@ -33,7 +35,8 @@
       'task_detail',
       [
         'type' => 'textarea',
-        'label' => 'タスク詳細'
+        'label' => 'タスク詳細',
+        'default' => $task->task_detail
       ], [
         'default' => $task->task_detail
       ]
@@ -46,6 +49,7 @@
         'label' => '締め切り',
         'dateFormat' => 'YYYY-MM-DD',
         'monthNames' => false,
+        'default' => $task->deadline
       ]
     );
 
@@ -54,7 +58,9 @@
       [
         'type' => 'select',
         'label' => '状態',
-        'options' => $statusVaild
+        'options' => $statusVaild,
+        'default' => ['status' => $task->status]
+
       ]
     );
 
@@ -64,7 +70,8 @@
         'type' => 'select',
         'label' => '担当者',
         'options' => $usersVaild,
-        'empty' => '選択してください'
+        'empty' => '選択してください',
+        'default' => ['personnel' => $task->fk_user_id]
       ]
     );
 
