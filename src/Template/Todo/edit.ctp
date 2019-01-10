@@ -1,11 +1,15 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-</head>
-<body>
+<?php
+  echo $this->Html->css('style.css');
+  echo $this->Html->css('common.css');
+  $this->assign('title', '編集');
+
+ ?>
+
+<div class="main">
+
   <?php
 
+    echo $this->Form->button('戻る', ['onclick' => 'history.back()', 'type' => 'button']);
 
     echo $this->Form->create(
       'null',
@@ -46,7 +50,7 @@
       'deadline',
       [
         'type' => 'date',
-        'label' => '締め切り',
+        'label' => '期限',
         'dateFormat' => 'YYYY-MM-DD',
         'monthNames' => false,
         'default' => $task->deadline
@@ -78,6 +82,8 @@
     echo $this->Form->button('完了');
 
     echo $this->Form->end();
-  ?>
-</body>
-</html>
+
+
+     ?>
+
+</div><!-- #main -->

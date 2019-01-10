@@ -1,14 +1,12 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-</head>
-<body>
-  <h1>Todoリスト</h1>
+<?php
+  echo $this->Html->css('style.css');
+  echo $this->Html->css('common.css');
+  $this->assign('title', 'Todo一覧');
+ ?>
+<div class="main">
 
   <h2>検索</h2>
 
-  <fieldset>
     <?php
       echo $this->Form->create('null', [
         'type' => 'get',
@@ -29,18 +27,20 @@
         'f_deadline_frm',
         [
           'type' => 'date',
-          'label' => '締め切り',
+          'label' => '期限',
           'dateFormat' => 'YYYY-MM-DD',
           'monthNames' => false,
           'empty' => '----'
         ]
       );
 
+      echo ' 〜 ';
+
       echo $this->Form->input(
         'f_deadline_to',
         [
           'type' => 'date',
-          'label' => '締め切り',
+          'label' => '',
           'dateFormat' => 'YYYY-MM-DD',
           'monthNames' => false,
           'empty' => '----'
@@ -69,11 +69,10 @@
       echo $this->Form->button('検索');
       echo $this->Form->end()
     ?>
-  </fieldset>
 
   <h2>一覧</h2>
 
-  <?= $this->Html->link('新規追加', ['action' => 'new_task']) ?>
+  <h2><?= $this->Html->link('新規追加', ['action' => 'new_task']) ?></h2>
 
   <table>
     <th>タスク名</th>
@@ -88,14 +87,12 @@
     <tr>
       <td><?= $this->Html->link($task->task_name, ['action' => 'view', $task->task_id]) ?></td>
       <td><?= h($task->task_detail); ?></td>
-      <td><?= h($task->fk_user_id); ?></td>
-      <td><?= h($task->fk_status_id); ?></td>
+      <td><?= h($task->users['user_name']); ?></td>
+      <td><?= h($task->status['status_name']); ?></td>
       <td><?= h($task->deadline); ?></td>
       <td><?= h($task->create_date); ?></td>
       <td><?= h($task->update_date); ?></td>
     </tr>
     <?php endforeach; ?>
   </table>
-
-</body>
-</html>
+</div><!-- #main -->

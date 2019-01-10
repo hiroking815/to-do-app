@@ -26,7 +26,7 @@
       $this->Status = TableRegistry::get('status');
       $this->Users = TableRegistry::get('users');
       $this->Tasks = TableRegistry::get('tasks');
-
+      $this->layout = 'todoLayout';
     } //end initialize()
 
     /**
@@ -77,12 +77,35 @@
      */
     public function index() {
 
-      $tasks = [];
-
-      $tasks = $this->Tasks->find()
-      ->where(['del_flg' => '0']);
+      $tasks = $this->Tasks->find('all',
+        ['order' => ['Tasks.create_date' => 'DESC']]
+        )
+        ->select([
+          'task_id',
+          'task_name',
+          'task_detail',
+          'users.user_name',
+          'status.status_name',
+          'deadline',
+          'create_date',
+          'update_date'
+        ])
+        ->join([
+          'Users' => [
+              'table' => 'Users',
+              'type' => 'INNER',
+              'conditions' => 'Tasks.fk_user_id = Users.user_id',
+          ],
+          'Status' => [
+              'table' => 'Status',
+              'type' => 'INNER',
+              'conditions' => 'Tasks.fk_status_id = Status.status_id',
+          ]
+        ])
+        ->where(['Tasks.del_flg' => '0']);
 
       $this->set(compact('tasks'));
+
 
     } //end index()
 
@@ -104,41 +127,65 @@
         $f_deadline_frm = "'".$tmp_deadline_frm['year'].'-'.$tmp_deadline_frm['month'].'-'.$tmp_deadline_frm['day']."'";
         $f_deadline_to = "'".$tmp_deadline_to['year'].'-'.$tmp_deadline_to['month'].'-'.$tmp_deadline_to['day']."'";
 
-        $tasks = $this->Tasks->find('all')
-        ->where(['del_flg' => '0']);
+        $tasks = $this->Tasks->find('all',
+          ['order' => ['Tasks.create_date' => 'DESC']])
+          ->select([
+            'task_id',
+            'task_name',
+            'task_detail',
+            'users.user_name',
+            'status.status_name',
+            'deadline',
+            'create_date',
+            'update_date'
+          ])
+          ->join([
+            'Users' => [
+                'table' => 'Users',
+                'type' => 'INNER',
+                'conditions' => 'Tasks.fk_user_id = Users.user_id',
+            ],
+            'Status' => [
+                'table' => 'Status',
+                'type' => 'INNER',
+                'conditions' => 'Tasks.fk_status_id = Status.status_id',
+            ]
+          ])
+          ->where(['Tasks.del_flg' => '0']);
 
         if($f_task_name != ''){
-          $tasks = $tasks->where(['task_name LIKE' => '%'.$f_task_name.'%']);
+
+          $tasks = $tasks->where(['Tasks.task_name LIKE' => '%'.$f_task_name.'%']);
+
         } //end if
 
         if($tmp_deadline_frm['year'] != '' && $tmp_deadline_to['year'] == ''){
 
-          $tasks = $tasks->where('deadline >= '.$f_deadline_frm);
+          $tasks = $tasks->where('Tasks.deadline >= '.$f_deadline_frm);
 
         } elseif ($tmp_deadline_frm['year'] == '' && $tmp_deadline_to['year'] != '') {
 
-          $tasks = $tasks->where('deadline <= '.$f_deadline_to);
+          $tasks = $tasks->where('Tasks.deadline <= '.$f_deadline_to);
 
         } //end if
 
         if($tmp_deadline_frm['year'] != '' && $tmp_deadline_to['year'] != ''){
 
-          $tasks = $tasks->where('deadline BETWEEN '.$f_deadline_frm.' AND '.$f_deadline_to);
+          $tasks = $tasks->where('Tasks.deadline BETWEEN '.$f_deadline_frm.' AND '.$f_deadline_to);
 
         } //end if
 
         if($f_personnel != ''){
 
-          $tasks = $tasks->where(['fk_user_id' => $f_personnel]);
+          $tasks = $tasks->where(['Tasks.fk_user_id' => $f_personnel]);
 
         } //end if
 
-        if($f_personnel != ''){
+        if($f_status != ''){
 
-          $tasks = $tasks->where(['fk_status_id' => $f_status]);
+          $tasks = $tasks->where(['Tasks.fk_status_id' => $f_status]);
 
         } //end if
-
 
         $this->set(compact('tasks'));
 
@@ -153,7 +200,31 @@
      */
     public function view($task_id = null){
 
-      $task = $this->Tasks->find()->where(['Tasks.task_id' => $task_id, 'del_flg' => '0'])->firstOrFail();
+      $task = $this->Tasks->find()
+        ->select([
+          'task_id',
+          'task_name',
+          'task_detail',
+          'users.user_name',
+          'status.status_name',
+          'deadline',
+          'create_date',
+          'update_date'
+        ])
+        ->join([
+          'Users' => [
+              'table' => 'Users',
+              'type' => 'INNER',
+              'conditions' => 'Tasks.fk_user_id = Users.user_id',
+          ],
+          'Status' => [
+              'table' => 'Status',
+              'type' => 'INNER',
+              'conditions' => 'Tasks.fk_status_id = Status.status_id',
+          ]
+        ])
+        ->where(['Tasks.task_id' => $task_id, 'Tasks.del_flg' => '0'])
+        ->first();
 
       $this->set(compact('task'));
 
@@ -175,8 +246,6 @@
 
       $this->set(compact('task'));
 
-      var_dump($task);
-
     } //end edit()
 
     /**
@@ -189,15 +258,20 @@
       $task_name = $this->request->data['task_name'];
       $task_detail = $this->request->data['task_detail'];
       $deadline = $this->request->data['deadline'];
-      $status = $this->request->data['status'];
-      $personnel = $this->request->data['personnel'];
+      $status_id = $this->request->data['status'];
+      $user_id = $this->request->data['personnel'];
+
+      $status = $this->Status->get($status_id);
+      $personnel = $this->Users->get($user_id);
 
       $this->set(array(
         'task_name' => $task_name,
         'task_detail' => $task_detail,
         'deadline' => $deadline,
-        'status' => $status,
-        'personnel' => $personnel
+        'status_id' => $status_id,
+        'user_id' => $user_id,
+        'status' => $status['status_name'],
+        'personnel' => $personnel['user_name']
       ));
 
     } //end confirm()
@@ -279,7 +353,7 @@
 
           $this->Flash->error('データの更新に失敗しました');
 
-        } //end if 
+        } //end if
 
       } //end if
 
