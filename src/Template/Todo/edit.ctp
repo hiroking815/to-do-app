@@ -27,23 +27,13 @@
       'task_name',
       [
         'type' => 'text',
-        'size' => 40,
+        'maxlength' => 40,
         'label' => 'タスク名',
-        'default' => $task->task_name
+        'default' => $task->task_name,
+        'requied' => 'required'
       ]
 
 
-    );
-
-    echo $this->Form->input(
-      'task_detail',
-      [
-        'type' => 'textarea',
-        'label' => 'タスク詳細',
-        'default' => $task->task_detail
-      ], [
-        'default' => $task->task_detail
-      ]
     );
 
     echo $this->Form->input(
@@ -74,8 +64,16 @@
         'type' => 'select',
         'label' => '担当者',
         'options' => $usersVaild,
-        'empty' => '選択してください',
         'default' => ['personnel' => $task->fk_user_id]
+      ]
+    );
+
+    echo $this->Form->input(
+      'task_detail',
+      [
+        'type' => 'textarea',
+        'label' => 'タスク詳細',
+        'default' => $task->task_detail,
       ]
     );
 

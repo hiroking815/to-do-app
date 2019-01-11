@@ -27,8 +27,9 @@
         'task_name',
         [
           'type' => 'text',
-          'size' => 40,
-          'label' => 'タスク名'
+          'maxlength' => 40,
+          'label' => 'タスク名',
+          'required' => 'required'
         ]
       );
 
@@ -57,7 +58,8 @@
           'type' => 'select',
           'label' => '担当者',
           'options' => $usersVaild,
-          'empty' => '選択してください'
+          'empty' => '選択してください',
+          'required' => 'required',
         ]
       );
 
